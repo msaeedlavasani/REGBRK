@@ -66,4 +66,33 @@ describe('UserController (e2e)', () => {
       .send({ email: 'not-an-email', fullName: 'Bad Email User' })
       .expect(400);
   });
+
+  it('GET /users/:id should return the user (200)', async () => {
+    const email = `e2e-get-${Date.now()}@example.com`;
+
+    const createResponse = await request(app.getHttpServer())
+      .post('/users')
+      .send({ email, fullName: 'Get Test User' })
+      .expect(201);
+
+    const created = createResponse.body as { id: string };
+
+    const getResponse = await request(app.getHttpServer())
+      .get(`/users/${created.id}`)
+      .expect(200);
+
+    const body = getResponse.body as { id: string; email: string };
+    expect(body.id).toBe(created.id);
+    expect(body.email).toBe(email);
+  });
+
+  it('GET /users/:id should return 404 when user does not exist', async () => {
+    const randomId = '11111111-1111-1111-1111-111111111111';
+
+    await request(app.getHttpServer()).get(`/users/${randomId}`).expect(404);
+  });
+
+  it('GET /users/:id should return 400 for invalid UUID', async () => {
+    await request(app.getHttpServer()).get('/users/not-a-uuid').expect(400);
+  });
 });

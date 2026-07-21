@@ -4,6 +4,7 @@ import { UserOrmEntity } from './infrastructure/persistence/user.orm-entity';
 import { TypeOrmUserRepository } from './infrastructure/persistence/typeorm-user.repository';
 import { USER_REPOSITORY } from './domain/repositories/user.repository';
 import { RegisterUserUseCase } from './application/commands/register-user.use-case';
+import { GetUserByIdUseCase } from './application/queries/get-user-by-id.use-case';
 import { UserController } from './presentation/controllers/user.controller';
 
 @Module({
@@ -15,7 +16,8 @@ import { UserController } from './presentation/controllers/user.controller';
       useClass: TypeOrmUserRepository,
     },
     RegisterUserUseCase,
+    GetUserByIdUseCase,
   ],
-  exports: [USER_REPOSITORY, RegisterUserUseCase],
+  exports: [USER_REPOSITORY, RegisterUserUseCase, GetUserByIdUseCase],
 })
 export class IdentityAccessModule {}
