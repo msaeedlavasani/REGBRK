@@ -32,6 +32,7 @@ export class LoginUseCase {
     const accessToken = await this.authTokenService.generateToken({
       userId: user.id.toString(),
       email: user.email.toString(),
+      role: user.role,
     });
 
     return { accessToken };

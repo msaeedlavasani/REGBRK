@@ -10,8 +10,10 @@ import { AUTH_TOKEN_SERVICE } from './domain/repositories/auth-token.service';
 import { JwtAuthTokenService } from './infrastructure/auth/jwt-auth-token.service';
 import { JwtStrategy } from './infrastructure/auth/jwt.strategy';
 import { JwtAuthGuard } from './infrastructure/auth/jwt-auth.guard';
+import { RolesGuard } from './infrastructure/auth/roles.guard';
 import { RegisterUserUseCase } from './application/commands/register-user.use-case';
 import { GetUserByIdUseCase } from './application/queries/get-user-by-id.use-case';
+import { ListUsersUseCase } from './application/queries/list-users.use-case';
 import { LoginUseCase } from './application/commands/login.use-case';
 import { UserController } from './presentation/controllers/user.controller';
 import { AuthController } from './presentation/controllers/auth.controller';
@@ -43,9 +45,11 @@ import { AuthController } from './presentation/controllers/auth.controller';
     },
     RegisterUserUseCase,
     GetUserByIdUseCase,
+    ListUsersUseCase,
     LoginUseCase,
     JwtStrategy,
     JwtAuthGuard,
+    RolesGuard,
   ],
   exports: [USER_REPOSITORY, RegisterUserUseCase, GetUserByIdUseCase],
 })

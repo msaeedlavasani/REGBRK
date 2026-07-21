@@ -11,6 +11,7 @@ export class UserMapper {
       email: Email.create(orm.email),
       fullName: orm.fullName,
       password: Password.fromHash(orm.password),
+      role: orm.role,
       createdAt: orm.createdAt,
     });
   }
@@ -21,6 +22,7 @@ export class UserMapper {
     orm.email = user.email.toString();
     orm.fullName = user.fullName;
     orm.password = user.passwordHash;
+    orm.role = user.role;
     orm.createdAt = user.createdAt;
     return orm;
   }

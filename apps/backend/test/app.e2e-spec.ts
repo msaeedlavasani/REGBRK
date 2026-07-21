@@ -3,6 +3,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from './../src/app.module';
+import { USER_REPOSITORY } from '../src/modules/identity-access/domain/repositories/user.repository';
+import type { UserRepository } from '../src/modules/identity-access/domain/repositories/user.repository';
+import { User } from '../src/modules/identity-access/domain/entities/user.entity';
+import { UserId } from '../src/modules/identity-access/domain/value-objects/user-id.vo';
+import { Password } from '../src/modules/identity-access/domain/value-objects/password.vo';
+import { UserRole } from '../src/modules/identity-access/domain/value-objects/user-role.enum';
 
 describe('UserController (e2e)', () => {
   let app: INestApplication;
@@ -43,6 +49,55 @@ describe('UserController (e2e)', () => {
       .expect(201);
 
     const registered = registerResponse.body as { id: string };
+
+    const loginResponse = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email, password })
+      .expect(200);
+
+    const loggedIn = loginResponse.body as { accessToken: string };
+
+    return {
+      userId: registered.id,
+      email,
+      accessToken: loggedIn.accessToken,
+    };
+  }
+
+  async function registerAdminAndLogin(): Promise<{
+    userId: string;
+    email: string;
+    accessToken: string;
+  }> {
+    const email = `e2e-admin-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2)}@example.com`;
+    const password = 'AdminTestPass123';
+
+    const registerResponse = await request(app.getHttpServer())
+      .post('/users')
+      .send({ email, fullName: 'Admin Test User', password })
+      .expect(201);
+
+    const registered = registerResponse.body as { id: string };
+
+    const userRepository = app.get<UserRepository>(USER_REPOSITORY);
+    const domainUser = await userRepository.findById(
+      UserId.fromString(registered.id),
+    );
+    if (!domainUser) {
+      throw new Error('User not found right after registration');
+    }
+
+    const adminUser = User.reconstitute({
+      id: domainUser.id,
+      email: domainUser.email,
+      fullName: domainUser.fullName,
+      password: Password.fromHash(domainUser.passwordHash),
+      role: UserRole.ADMIN,
+      createdAt: domainUser.createdAt,
+    });
+    await userRepository.save(adminUser);
 
     const loginResponse = await request(app.getHttpServer())
       .post('/auth/login')
@@ -193,5 +248,27 @@ describe('UserController (e2e)', () => {
     const body = response.body as { id: string; email: string };
     expect(body.id).toBe(userId);
     expect(body.email).toBe(email);
+  });
+
+  it('GET /users should return 403 for a non-admin user', async () => {
+    const { accessToken } = await registerAndLogin();
+
+    await request(app.getHttpServer())
+      .get('/users')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(403);
+  });
+
+  it('GET /users should return 200 with a list for an admin user', async () => {
+    const { accessToken } = await registerAdminAndLogin();
+
+    const response = await request(app.getHttpServer())
+      .get('/users')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(200);
+
+    const body = response.body as unknown[];
+    expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBeGreaterThan(0);
   });
 });

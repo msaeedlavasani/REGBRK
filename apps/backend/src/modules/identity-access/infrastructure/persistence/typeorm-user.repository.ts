@@ -31,4 +31,9 @@ export class TypeOrmUserRepository implements UserRepository {
     });
     return orm ? UserMapper.toDomain(orm) : null;
   }
+
+  async findAll(): Promise<User[]> {
+    const orms = await this.repo.find();
+    return orms.map((orm) => UserMapper.toDomain(orm));
+  }
 }

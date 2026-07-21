@@ -1,12 +1,14 @@
 import { UserId } from '../value-objects/user-id.vo';
 import { Email } from '../value-objects/email.vo';
 import { Password } from '../value-objects/password.vo';
+import { UserRole } from '../value-objects/user-role.enum';
 
 export interface UserProps {
   id: UserId;
   email: Email;
   fullName: string;
   password: Password;
+  role: UserRole;
   createdAt: Date;
 }
 
@@ -21,6 +23,7 @@ export class User {
     email: string;
     fullName: string;
     password: string;
+    role?: UserRole;
   }): Promise<User> {
     if (!params.fullName || params.fullName.trim().length < 2) {
       throw new Error('fullName must be at least 2 characters long');
@@ -33,6 +36,7 @@ export class User {
       email: Email.create(params.email),
       fullName: params.fullName.trim(),
       password,
+      role: params.role ?? UserRole.USER,
       createdAt: new Date(),
     });
   }
@@ -51,6 +55,10 @@ export class User {
 
   get fullName(): string {
     return this.props.fullName;
+  }
+
+  get role(): UserRole {
+    return this.props.role;
   }
 
   get createdAt(): Date {

@@ -12,11 +12,15 @@ import {
 import { ApiBearerAuth, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { RegisterUserUseCase } from '../../application/commands/register-user.use-case';
 import { GetUserByIdUseCase } from '../../application/queries/get-user-by-id.use-case';
+import { ListUsersUseCase } from '../../application/queries/list-users.use-case';
 import { EmailAlreadyExistsError } from '../../application/errors/email-already-exists.error';
 import { UserNotFoundError } from '../../application/errors/user-not-found.error';
 import { CreateUserRequestDto } from '../dto/create-user-request.dto';
 import { UserResponseDto } from '../dto/user-response.dto';
 import { JwtAuthGuard } from '../../infrastructure/auth/jwt-auth.guard';
+import { RolesGuard } from '../../infrastructure/auth/roles.guard';
+import { Roles } from '../../infrastructure/auth/roles.decorator';
+import { UserRole } from '../../domain/value-objects/user-role.enum';
 
 @ApiTags('users')
 @Controller('users')
@@ -24,6 +28,7 @@ export class UserController {
   constructor(
     private readonly registerUserUseCase: RegisterUserUseCase,
     private readonly getUserByIdUseCase: GetUserByIdUseCase,
+    private readonly listUsersUseCase: ListUsersUseCase,
   ) {}
 
   @Post()
@@ -39,6 +44,18 @@ export class UserController {
       }
       throw error;
     }
+  }
+
+  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiResponse({ status: 200, type: [UserResponseDto] })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - requires ADMIN role' })
+  async list(): Promise<UserResponseDto[]> {
+    const users = await this.listUsersUseCase.execute();
+    return users.map((user) => UserResponseDto.fromDomain(user));
   }
 
   @Get(':id')

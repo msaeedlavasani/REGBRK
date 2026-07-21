@@ -9,10 +9,12 @@ export class JwtAuthTokenService implements AuthTokenService {
   async generateToken(payload: {
     userId: string;
     email: string;
+    role: string;
   }): Promise<string> {
     return this.jwtService.signAsync({
       sub: payload.userId,
       email: payload.email,
+      role: payload.role,
     });
   }
 }
