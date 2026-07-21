@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserOrmEntity } from './infrastructure/persistence/user.orm-entity';
 import { TypeOrmUserRepository } from './infrastructure/persistence/typeorm-user.repository';
 import { USER_REPOSITORY } from './domain/repositories/user.repository';
+import { RegisterUserUseCase } from './application/commands/register-user.use-case';
 
 @Module({
   imports: [TypeOrmModule.forFeature([UserOrmEntity])],
@@ -12,7 +13,8 @@ import { USER_REPOSITORY } from './domain/repositories/user.repository';
       provide: USER_REPOSITORY,
       useClass: TypeOrmUserRepository,
     },
+    RegisterUserUseCase,
   ],
-  exports: [USER_REPOSITORY],
+  exports: [USER_REPOSITORY, RegisterUserUseCase],
 })
 export class IdentityAccessModule {}
