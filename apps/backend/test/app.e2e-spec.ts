@@ -32,7 +32,7 @@ describe('UserController (e2e)', () => {
 
     const response = await request(app.getHttpServer())
       .post('/users')
-      .send({ email, fullName: 'E2E Test User' })
+      .send({ email, fullName: 'E2E Test User', password: 'TestPassword123' })
       .expect(201);
 
     const body = response.body as {
@@ -51,19 +51,23 @@ describe('UserController (e2e)', () => {
 
     await request(app.getHttpServer())
       .post('/users')
-      .send({ email, fullName: 'First User' })
+      .send({ email, fullName: 'First User', password: 'TestPassword123' })
       .expect(201);
 
     await request(app.getHttpServer())
       .post('/users')
-      .send({ email, fullName: 'Second User' })
+      .send({ email, fullName: 'Second User', password: 'TestPassword123' })
       .expect(409);
   });
 
   it('POST /users should reject invalid email (400)', async () => {
     await request(app.getHttpServer())
       .post('/users')
-      .send({ email: 'not-an-email', fullName: 'Bad Email User' })
+      .send({
+        email: 'not-an-email',
+        fullName: 'Bad Email User',
+        password: 'TestPassword123',
+      })
       .expect(400);
   });
 
@@ -72,7 +76,7 @@ describe('UserController (e2e)', () => {
 
     const createResponse = await request(app.getHttpServer())
       .post('/users')
-      .send({ email, fullName: 'Get Test User' })
+      .send({ email, fullName: 'Get Test User', password: 'TestPassword123' })
       .expect(201);
 
     const created = createResponse.body as { id: string };
@@ -88,11 +92,49 @@ describe('UserController (e2e)', () => {
 
   it('GET /users/:id should return 404 when user does not exist', async () => {
     const randomId = '11111111-1111-1111-1111-111111111111';
-
     await request(app.getHttpServer()).get(`/users/${randomId}`).expect(404);
   });
 
   it('GET /users/:id should return 400 for invalid UUID', async () => {
     await request(app.getHttpServer()).get('/users/not-a-uuid').expect(400);
+  });
+
+  it('POST /auth/login should return a token on valid credentials (200)', async () => {
+    const email = `e2e-login-${Date.now()}@example.com`;
+    const password = 'LoginPass123';
+
+    await request(app.getHttpServer())
+      .post('/users')
+      .send({ email, fullName: 'Login User', password })
+      .expect(201);
+
+    const response = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email, password })
+      .expect(200);
+
+    const body = response.body as { accessToken: string };
+    expect(body.accessToken).toBeDefined();
+  });
+
+  it('POST /auth/login should reject wrong password (401)', async () => {
+    const email = `e2e-login-wrong-${Date.now()}@example.com`;
+
+    await request(app.getHttpServer())
+      .post('/users')
+      .send({ email, fullName: 'Login User', password: 'CorrectPass123' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email, password: 'WrongPassword' })
+      .expect(401);
+  });
+
+  it('POST /auth/login should reject unknown email (401)', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email: 'nobody-e2e@example.com', password: 'Whatever123' })
+      .expect(401);
   });
 });

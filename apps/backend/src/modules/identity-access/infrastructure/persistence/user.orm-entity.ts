@@ -11,6 +11,9 @@ export class UserOrmEntity {
   @Column({ type: 'varchar', name: 'full_name' })
   fullName: string;
 
+  @Column({ type: 'varchar', name: 'password' })
+  password: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 }

@@ -40,9 +40,10 @@ describe('TypeOrmUserRepository (integration)', () => {
   });
 
   it('should save and retrieve a user by id', async () => {
-    const user = User.create({
+    const user = await User.create({
       email: `test-${Date.now()}@example.com`,
       fullName: 'Integration Test User',
+      password: 'SomePassword123',
     });
 
     await repository.save(user);
@@ -55,9 +56,10 @@ describe('TypeOrmUserRepository (integration)', () => {
   });
 
   it('should find a user by email', async () => {
-    const user = User.create({
+    const user = await User.create({
       email: `test-email-${Date.now()}@example.com`,
       fullName: 'Email Lookup User',
+      password: 'SomePassword123',
     });
 
     await repository.save(user);

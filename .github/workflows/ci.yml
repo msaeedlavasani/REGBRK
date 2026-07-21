@@ -50,6 +50,14 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Run migrations
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USERNAME: regbrk
+          DB_PASSWORD: regbrk_ci_password
+          DB_NAME: regbrk_ci
+        run: npm run migration:run
       - name: Test
         env:
           DB_HOST: localhost

@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { RegisterUserUseCase } from './register-user.use-case';
 import { UserRepository } from '../../domain/repositories/user.repository';
 import { User } from '../../domain/entities/user.entity';
 import { EmailAlreadyExistsError } from '../errors/email-already-exists.error';
-/* eslint-disable @typescript-eslint/unbound-method */
+
 function createMockRepository(): jest.Mocked<UserRepository> {
   return {
     save: jest.fn(),
@@ -27,6 +28,7 @@ describe('RegisterUserUseCase', () => {
     const result = await useCase.execute({
       email: 'new-user@example.com',
       fullName: 'New User',
+      password: 'SomePassword123',
     });
 
     expect(result).toBeInstanceOf(User);
@@ -35,9 +37,10 @@ describe('RegisterUserUseCase', () => {
   });
 
   it('should throw EmailAlreadyExistsError when email already exists', async () => {
-    const existingUser = User.create({
+    const existingUser = await User.create({
       email: 'existing@example.com',
       fullName: 'Existing User',
+      password: 'SomePassword123',
     });
     mockRepo.findByEmail.mockResolvedValue(existingUser);
 
@@ -45,6 +48,7 @@ describe('RegisterUserUseCase', () => {
       useCase.execute({
         email: 'existing@example.com',
         fullName: 'Another Name',
+        password: 'SomePassword123',
       }),
     ).rejects.toThrow(EmailAlreadyExistsError);
 

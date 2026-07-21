@@ -21,9 +21,10 @@ export class RegisterUserUseCase {
       throw new EmailAlreadyExistsError(dto.email);
     }
 
-    const user = User.create({
+    const user = await User.create({
       email: dto.email,
       fullName: dto.fullName,
+      password: dto.password,
     });
 
     await this.userRepository.save(user);

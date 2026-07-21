@@ -22,9 +22,10 @@ describe('GetUserByIdUseCase', () => {
   });
 
   it('should return the user when found', async () => {
-    const user = User.create({
+    const user = await User.create({
       email: 'found@example.com',
       fullName: 'Found User',
+      password: 'SomePassword123',
     });
     mockRepo.findById.mockResolvedValue(user);
 
