@@ -1,7 +1,19 @@
 # REGBRK
 
-سامانه کارگزاری خدمات ثبتی املاک و مستغلات
+Real Estate Registration Brokerage Platform.
+
+## Architecture
+- Domain-Driven Design (DDD)
+- Clean Architecture
+- Modular Monolith (microservices-ready)
+
+## Stack
+- Backend: NestJS
+- Frontend: Next.js
+- Database: PostgreSQL (TypeORM)
+- API: REST + OpenAPI
+- Containerization: Docker
+- CI: GitHub Actions
 
 ## Status
-
-Repository Initialization
+🚧 Project bootstrapping — Sprint 0
