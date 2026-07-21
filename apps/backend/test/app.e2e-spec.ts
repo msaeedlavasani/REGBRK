@@ -27,6 +27,37 @@ describe('UserController (e2e)', () => {
     await app.close();
   });
 
+  async function registerAndLogin(): Promise<{
+    userId: string;
+    email: string;
+    accessToken: string;
+  }> {
+    const email = `e2e-auth-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2)}@example.com`;
+    const password = 'AuthTestPass123';
+
+    const registerResponse = await request(app.getHttpServer())
+      .post('/users')
+      .send({ email, fullName: 'Auth Test User', password })
+      .expect(201);
+
+    const registered = registerResponse.body as { id: string };
+
+    const loginResponse = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email, password })
+      .expect(200);
+
+    const loggedIn = loginResponse.body as { accessToken: string };
+
+    return {
+      userId: registered.id,
+      email,
+      accessToken: loggedIn.accessToken,
+    };
+  }
+
   it('POST /users should register a new user (201)', async () => {
     const email = `e2e-${Date.now()}@example.com`;
 
@@ -71,32 +102,41 @@ describe('UserController (e2e)', () => {
       .expect(400);
   });
 
-  it('GET /users/:id should return the user (200)', async () => {
-    const email = `e2e-get-${Date.now()}@example.com`;
+  it('GET /users/:id should return 401 without a token', async () => {
+    const { userId } = await registerAndLogin();
+    await request(app.getHttpServer()).get(`/users/${userId}`).expect(401);
+  });
 
-    const createResponse = await request(app.getHttpServer())
-      .post('/users')
-      .send({ email, fullName: 'Get Test User', password: 'TestPassword123' })
-      .expect(201);
-
-    const created = createResponse.body as { id: string };
+  it('GET /users/:id should return the user with a valid token (200)', async () => {
+    const { userId, email, accessToken } = await registerAndLogin();
 
     const getResponse = await request(app.getHttpServer())
-      .get(`/users/${created.id}`)
+      .get(`/users/${userId}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .expect(200);
 
     const body = getResponse.body as { id: string; email: string };
-    expect(body.id).toBe(created.id);
+    expect(body.id).toBe(userId);
     expect(body.email).toBe(email);
   });
 
   it('GET /users/:id should return 404 when user does not exist', async () => {
+    const { accessToken } = await registerAndLogin();
     const randomId = '11111111-1111-1111-1111-111111111111';
-    await request(app.getHttpServer()).get(`/users/${randomId}`).expect(404);
+
+    await request(app.getHttpServer())
+      .get(`/users/${randomId}`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(404);
   });
 
   it('GET /users/:id should return 400 for invalid UUID', async () => {
-    await request(app.getHttpServer()).get('/users/not-a-uuid').expect(400);
+    const { accessToken } = await registerAndLogin();
+
+    await request(app.getHttpServer())
+      .get('/users/not-a-uuid')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(400);
   });
 
   it('POST /auth/login should return a token on valid credentials (200)', async () => {
@@ -136,5 +176,22 @@ describe('UserController (e2e)', () => {
       .post('/auth/login')
       .send({ email: 'nobody-e2e@example.com', password: 'Whatever123' })
       .expect(401);
+  });
+
+  it('GET /auth/me should return 401 without a token', async () => {
+    await request(app.getHttpServer()).get('/auth/me').expect(401);
+  });
+
+  it('GET /auth/me should return the current user profile (200)', async () => {
+    const { userId, email, accessToken } = await registerAndLogin();
+
+    const response = await request(app.getHttpServer())
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(200);
+
+    const body = response.body as { id: string; email: string };
+    expect(body.id).toBe(userId);
+    expect(body.email).toBe(email);
   });
 });

@@ -7,14 +7,16 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { RegisterUserUseCase } from '../../application/commands/register-user.use-case';
 import { GetUserByIdUseCase } from '../../application/queries/get-user-by-id.use-case';
 import { EmailAlreadyExistsError } from '../../application/errors/email-already-exists.error';
 import { UserNotFoundError } from '../../application/errors/user-not-found.error';
 import { CreateUserRequestDto } from '../dto/create-user-request.dto';
 import { UserResponseDto } from '../dto/user-response.dto';
+import { JwtAuthGuard } from '../../infrastructure/auth/jwt-auth.guard';
 
 @ApiTags('users')
 @Controller('users')
@@ -40,7 +42,10 @@ export class UserController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiResponse({ status: 200, type: UserResponseDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async getById(
     @Param('id', ParseUUIDPipe) id: string,
