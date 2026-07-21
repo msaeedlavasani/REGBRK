@@ -1,4 +1,3 @@
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -17,6 +16,36 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  backend:
+    build:
+      context: ../../apps/backend
+      dockerfile: Dockerfile
+    container_name: regbrk-backend
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: regbrk
+      DB_PASSWORD: regbrk_dev_password
+      DB_NAME: regbrk_dev
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ../../apps/frontend
+      dockerfile: Dockerfile
+    container_name: regbrk-frontend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    depends_on:
+      - backend
 
 volumes:
   regbrk_postgres_data:
