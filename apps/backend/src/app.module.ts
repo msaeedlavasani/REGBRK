@@ -21,7 +21,7 @@ import { IdentityAccessModule } from './modules/identity-access/identity-access.
         username: config.get<string>('DB_USERNAME'),
         password: config.get<string>('DB_PASSWORD'),
         database: config.get<string>('DB_NAME'),
-        entities: [],
+        entities: [__dirname + '/**/*.orm-entity{.ts,.js}'],
         synchronize: false,
         autoLoadEntities: true,
       }),
