@@ -37,7 +37,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
           cache-dependency-path: apps/backend/package-lock.json
 
@@ -58,6 +58,7 @@ jobs:
           DB_PASSWORD: regbrk_ci_password
           DB_NAME: regbrk_ci
         run: npm run migration:run
+
       - name: Test
         env:
           DB_HOST: localhost
@@ -66,6 +67,17 @@ jobs:
           DB_PASSWORD: regbrk_ci_password
           DB_NAME: regbrk_ci
         run: npm run test
+
+      - name: Run e2e tests
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USERNAME: regbrk
+          DB_PASSWORD: regbrk_ci_password
+          DB_NAME: regbrk_ci
+          JWT_SECRET: ci-test-secret
+          JWT_EXPIRES_IN: 3600
+        run: npm run test:e2e
 
   frontend:
     name: Frontend (build, lint, test)
@@ -82,7 +94,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
           cache-dependency-path: apps/frontend/package-lock.json
 
