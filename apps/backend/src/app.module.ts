@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { IdentityAccessModule } from './modules/identity-access/identity-access.module';
+import { PropertyModule } from './modules/property/property.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { IdentityAccessModule } from './modules/identity-access/identity-access.
       }),
     }),
     IdentityAccessModule,
+    PropertyModule,
   ],
   controllers: [AppController],
   providers: [AppService],
