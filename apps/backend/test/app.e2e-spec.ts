@@ -9,6 +9,7 @@ import { User } from '../src/modules/identity-access/domain/entities/user.entity
 import { UserId } from '../src/modules/identity-access/domain/value-objects/user-id.vo';
 import { Password } from '../src/modules/identity-access/domain/value-objects/password.vo';
 import { UserRole } from '../src/modules/identity-access/domain/value-objects/user-role.enum';
+import { PropertyType } from '../src/modules/property/domain/value-objects/property-type.enum';
 
 describe('UserController (e2e)', () => {
   let app: INestApplication;
@@ -270,5 +271,113 @@ describe('UserController (e2e)', () => {
     const body = response.body as unknown[];
     expect(Array.isArray(body)).toBe(true);
     expect(body.length).toBeGreaterThan(0);
+  });
+});
+
+describe('PropertyController (e2e)', () => {
+  let app: INestApplication;
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
+    await app.init();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  async function registerAndLogin(): Promise<{
+    userId: string;
+    accessToken: string;
+  }> {
+    const email = `e2e-property-owner-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2)}@example.com`;
+    const password = 'OwnerTestPass123';
+
+    const registerResponse = await request(app.getHttpServer())
+      .post('/users')
+      .send({ email, fullName: 'Property Owner', password })
+      .expect(201);
+
+    const registered = registerResponse.body as { id: string };
+
+    const loginResponse = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email, password })
+      .expect(200);
+
+    const loggedIn = loginResponse.body as { accessToken: string };
+
+    return { userId: registered.id, accessToken: loggedIn.accessToken };
+  }
+
+  const validPropertyPayload = {
+    title: 'Beautiful Apartment',
+    address: '123 Main Street',
+    price: 2500000000,
+    type: PropertyType.SALE,
+    area: 120,
+    roomsCount: 3,
+  };
+
+  it('POST /properties should return 401 without a token', async () => {
+    await request(app.getHttpServer())
+      .post('/properties')
+      .send(validPropertyPayload)
+      .expect(401);
+  });
+
+  it('POST /properties should create a property with a valid token (201)', async () => {
+    const { userId, accessToken } = await registerAndLogin();
+
+    const response = await request(app.getHttpServer())
+      .post('/properties')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send(validPropertyPayload)
+      .expect(201);
+
+    const body = response.body as {
+      id: string;
+      title: string;
+      ownerId: string;
+      status: string;
+    };
+
+    expect(body.id).toBeDefined();
+    expect(body.title).toBe(validPropertyPayload.title);
+    expect(body.ownerId).toBe(userId);
+    expect(body.status).toBe('ACTIVE');
+  });
+
+  it('POST /properties should reject invalid payload (400)', async () => {
+    const { accessToken } = await registerAndLogin();
+
+    await request(app.getHttpServer())
+      .post('/properties')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ ...validPropertyPayload, title: 'Hi' })
+      .expect(400);
+  });
+
+  it('POST /properties should reject negative price (400)', async () => {
+    const { accessToken } = await registerAndLogin();
+
+    await request(app.getHttpServer())
+      .post('/properties')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ ...validPropertyPayload, price: -100 })
+      .expect(400);
   });
 });
