@@ -4,6 +4,8 @@ import { PropertyOrmEntity } from './infrastructure/persistence/property.orm-ent
 import { TypeOrmPropertyRepository } from './infrastructure/persistence/typeorm-property.repository';
 import { PROPERTY_REPOSITORY } from './domain/repositories/property.repository';
 import { CreatePropertyUseCase } from './application/commands/create-property.use-case';
+import { ListPropertiesUseCase } from './application/queries/list-properties.use-case';
+import { GetPropertyByIdUseCase } from './application/queries/get-property-by-id.use-case';
 import { PropertyController } from './presentation/controllers/property.controller';
 
 @Module({
@@ -15,6 +17,8 @@ import { PropertyController } from './presentation/controllers/property.controll
       useClass: TypeOrmPropertyRepository,
     },
     CreatePropertyUseCase,
+    ListPropertiesUseCase,
+    GetPropertyByIdUseCase,
   ],
   exports: [PROPERTY_REPOSITORY, CreatePropertyUseCase],
 })

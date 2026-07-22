@@ -380,4 +380,56 @@ describe('PropertyController (e2e)', () => {
       .send({ ...validPropertyPayload, price: -100 })
       .expect(400);
   });
+
+  it('GET /properties should return 200 with a list without a token', async () => {
+    const { accessToken } = await registerAndLogin();
+
+    await request(app.getHttpServer())
+      .post('/properties')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send(validPropertyPayload)
+      .expect(201);
+
+    const response = await request(app.getHttpServer())
+      .get('/properties')
+      .expect(200);
+
+    const body = response.body as unknown[];
+    expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBeGreaterThan(0);
+  });
+
+  it('GET /properties/:id should return the property without a token (200)', async () => {
+    const { accessToken } = await registerAndLogin();
+
+    const createResponse = await request(app.getHttpServer())
+      .post('/properties')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send(validPropertyPayload)
+      .expect(201);
+
+    const created = createResponse.body as { id: string };
+
+    const getResponse = await request(app.getHttpServer())
+      .get(`/properties/${created.id}`)
+      .expect(200);
+
+    const body = getResponse.body as { id: string; title: string };
+    expect(body.id).toBe(created.id);
+    expect(body.title).toBe(validPropertyPayload.title);
+  });
+
+  it('GET /properties/:id should return 404 when property does not exist', async () => {
+    const randomId = '11111111-1111-1111-1111-111111111111';
+
+    await request(app.getHttpServer())
+      .get(`/properties/${randomId}`)
+      .expect(404);
+  });
+
+  it('GET /properties/:id should return 400 for invalid UUID', async () => {
+    await request(app.getHttpServer())
+      .get('/properties/not-a-uuid')
+      .expect(400);
+  });
 });

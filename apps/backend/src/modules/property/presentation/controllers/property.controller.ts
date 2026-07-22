@@ -1,6 +1,18 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreatePropertyUseCase } from '../../application/commands/create-property.use-case';
+import { ListPropertiesUseCase } from '../../application/queries/list-properties.use-case';
+import { GetPropertyByIdUseCase } from '../../application/queries/get-property-by-id.use-case';
+import { PropertyNotFoundError } from '../../application/errors/property-not-found.error';
 import { CreatePropertyRequestDto } from '../dto/create-property-request.dto';
 import { PropertyResponseDto } from '../dto/property-response.dto';
 import { JwtAuthGuard } from '../../../identity-access/infrastructure/auth/jwt-auth.guard';
@@ -10,7 +22,11 @@ import type { AuthenticatedUser } from '../../../identity-access/presentation/de
 @ApiTags('properties')
 @Controller('properties')
 export class PropertyController {
-  constructor(private readonly createPropertyUseCase: CreatePropertyUseCase) {}
+  constructor(
+    private readonly createPropertyUseCase: CreatePropertyUseCase,
+    private readonly listPropertiesUseCase: ListPropertiesUseCase,
+    private readonly getPropertyByIdUseCase: GetPropertyByIdUseCase,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -26,5 +42,31 @@ export class PropertyController {
       ownerId: user.userId,
     });
     return PropertyResponseDto.fromDomain(property);
+  }
+
+  @Get()
+  @ApiResponse({ status: 200, type: [PropertyResponseDto] })
+  async list(): Promise<PropertyResponseDto[]> {
+    const properties = await this.listPropertiesUseCase.execute();
+    return properties.map((property) =>
+      PropertyResponseDto.fromDomain(property),
+    );
+  }
+
+  @Get(':id')
+  @ApiResponse({ status: 200, type: PropertyResponseDto })
+  @ApiResponse({ status: 404, description: 'Property not found' })
+  async getById(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<PropertyResponseDto> {
+    try {
+      const property = await this.getPropertyByIdUseCase.execute(id);
+      return PropertyResponseDto.fromDomain(property);
+    } catch (error) {
+      if (error instanceof PropertyNotFoundError) {
+        throw new NotFoundException(error.message);
+      }
+      throw error;
+    }
   }
 }
